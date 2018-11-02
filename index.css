@@ -79,7 +79,7 @@
 .gameover {
   display: none;
   width: 200px;
-  top: 120px;
+  top: 290px;
   background-color: #cd853f;
   position: absolute;
   left: 50%;
@@ -95,7 +95,7 @@
 button {
   background-color: #4caf50;
   border: none;
-  color: white;
+  color: #fff;
   padding: 15px 32px;
   text-align: center;
   text-decoration: none;
@@ -108,4 +108,27 @@ button {
 .reset {
   text-align: center;
   padding-top: 20px;
+}
+
+.select-style {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 10px;
+  flex-wrap: wrap;
+  width: 150px;
+  margin: 0 auto;
+}
+
+.select-style select {
+  padding: 5px 8px;
+  background: #4caf50;
+  -webkit-appearance: none;
+  border: none;
+  color: #fff;
+  text-align-last: center;
+  width: 50px;
+}
+
+.select-style select:focus {
+  outline: none;
 }
