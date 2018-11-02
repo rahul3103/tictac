@@ -219,7 +219,7 @@ function restart() {
       grid[colIdx][rowidx] = 0;
     }
   }
-  addNumbers();
+  addEventListenerToDropdown();
   renderMainGrid();
   addClickHandlers();
   gameFinished = false;
@@ -252,6 +252,11 @@ function addNumbers() {
     el.value = String(i);
     dropdown.appendChild(el);
   }
+  addEventListenerToDropdown();
+}
+
+function addEventListenerToDropdown() {
+  let dropdown = document.getElementById("selectNumber");
   dropdown.addEventListener("change", onOptionChange, false);
 }
 
