@@ -19,20 +19,11 @@
  *
  */
 const grid = [];
-const GRID_LENGTH = 3;
+let GRID_LENGTH = 3;
 let turn = "X";
 let gameFinished = false;
 
-const winningCombo = [
-  [{ x: 0, y: 0 }, { x: 0, y: 1 }, { x: 0, y: 2 }],
-  [{ x: 1, y: 0 }, { x: 1, y: 1 }, { x: 1, y: 2 }],
-  [{ x: 2, y: 0 }, { x: 2, y: 1 }, { x: 2, y: 2 }],
-  [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }],
-  [{ x: 0, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 }],
-  [{ x: 0, y: 2 }, { x: 1, y: 2 }, { x: 2, y: 2 }],
-  [{ x: 0, y: 0 }, { x: 1, y: 1 }, { x: 2, y: 2 }],
-  [{ x: 0, y: 2 }, { x: 1, y: 1 }, { x: 2, y: 0 }]
-];
+let winningCombo = [];
 
 function initializeGrid() {
   for (let colIdx = 0; colIdx < GRID_LENGTH; colIdx++) {
@@ -91,22 +82,61 @@ function renderMainGrid() {
   parent.innerHTML = '<div class="columnsStyle">' + columnDivs + "</div>";
 }
 
-function checkWinner(grid) {
-  for (let i = 0; i < winningCombo.length; i++) {
-    let [a, b, c] = winningCombo[i];
-    if (
-      grid[a.x][a.y] &&
-      grid[a.x][a.y] === grid[b.x][b.y] &&
-      grid[a.x][a.y] === grid[c.x][c.y]
-    ) {
-      gameFinished = true;
-      return {
-        combination: winningCombo[i],
-        winner: grid[a.x][a.y] === 1 ? "You Won" : "Computer Won"
-      };
-    }
+function checkWinByRow(colIdx, grid) {
+  let winner = grid[colIdx][0];
+  for (let i = 0; i < GRID_LENGTH; i++) {
+    if (grid[colIdx][i] != winner) {
+      winner = null;
+      winningCombo = [];
+      break;
+    } else winningCombo.push({ x: colIdx, y: i });
   }
-  return null;
+  return winner;
+}
+
+function checkWinByCol(rowIdx, grid) {
+  let winner = grid[0][rowIdx];
+  for (let i = 0; i < GRID_LENGTH; i++) {
+    if (grid[i][rowIdx] != winner) {
+      winner = null;
+      winningCombo = [];
+      break;
+    } else winningCombo.push({ x: i, y: rowIdx });
+  }
+  return winner;
+}
+
+function checkWinByDiagonal(grid) {
+  let winner = grid[0][0];
+  for (let i = 0; i < GRID_LENGTH; i++) {
+    if (grid[i][i] != winner) {
+      winner = null;
+      winningCombo = [];
+      break;
+    } else winningCombo.push({ x: i, y: i });
+  }
+  return winner;
+}
+
+function checkWinByAntiDiagonal(grid) {
+  let winner = grid[0][GRID_LENGTH - 1];
+  for (let i = 0; i < GRID_LENGTH; i++) {
+    if (grid[i][GRID_LENGTH - 1 - i] != winner) {
+      winner = null;
+      winningCombo = [];
+      break;
+    } else winningCombo.push({ x: i, y: GRID_LENGTH - 1 - i });
+  }
+  return winner;
+}
+
+function checkWinner(colIdx, rowIdx, grid) {
+  let winner = checkWinByRow(colIdx, grid);
+  if (!winner) winner = checkWinByCol(rowIdx, grid);
+  if (!winner && rowIdx === colIdx) winner = checkWinByDiagonal(grid);
+  if (!winner && parseInt(rowIdx) + parseInt(colIdx) === GRID_LENGTH - 1)
+    winner = checkWinByAntiDiagonal(grid);
+  return winner;
 }
 
 function checkFreeSpace() {
@@ -125,7 +155,7 @@ function renderWinner(player) {
 }
 
 function checkDraw() {
-  if (gameFinished) return false;
+  if (gameFinished) return;
   if (checkFreeSpace().length === 0) {
     var boxes = document.getElementsByClassName("box");
     for (var idx = 0; idx < boxes.length; idx++) {
@@ -145,14 +175,15 @@ function newSpot() {
 }
 
 function gameOver(winner) {
-  for (index of winner.combination) {
+  gameFinished = true;
+  for (index of winningCombo) {
     let div = document.querySelector(
       `[colidx='${index.x}'][rowidx='${index.y}']`
     );
     div.style.backgroundColor = "yellow";
   }
   removeClickHandler();
-  renderWinner(winner.winner);
+  renderWinner(winner === 1 ? "You Won" : "Computer Won");
 }
 
 function playerTurn(rowIdx, colIdx, player) {
@@ -160,7 +191,7 @@ function playerTurn(rowIdx, colIdx, player) {
   grid[colIdx][rowIdx] = newValue;
   renderMainGrid();
   addClickHandlers();
-  let winner = checkWinner(grid);
+  let winner = checkWinner(colIdx, rowIdx, grid);
   if (winner) gameOver(winner);
 }
 
@@ -169,7 +200,7 @@ function onBoxClick() {
   var colIdx = this.getAttribute("colIdx");
   if (!grid[colIdx][rowIdx]) {
     playerTurn(rowIdx, colIdx, turn);
-    if (!checkDraw()) {
+    if (!checkDraw() && !gameFinished) {
       playerTurn(...newSpot(), "O");
     }
   }
@@ -188,9 +219,11 @@ function restart() {
       grid[colIdx][rowidx] = 0;
     }
   }
+  addNumbers();
   renderMainGrid();
   addClickHandlers();
   gameFinished = false;
+  winningCombo = [];
   document.querySelector(".gameover").style.display = "none";
 }
 
@@ -203,6 +236,26 @@ function addClickHandlers() {
   restartbtn.addEventListener("click", restart, false);
 }
 
+function onOptionChange() {
+  GRID_LENGTH = Number(this.value);
+  initializeGrid();
+  renderMainGrid();
+  addClickHandlers();
+  restart();
+}
+
+function addNumbers() {
+  let dropdown = document.getElementById("selectNumber");
+  for (let i = 4; i < 10; ++i) {
+    var el = document.createElement("option");
+    el.textContent = String(i);
+    el.value = String(i);
+    dropdown.appendChild(el);
+  }
+  dropdown.addEventListener("change", onOptionChange, false);
+}
+
+addNumbers();
 initializeGrid();
 renderMainGrid();
 addClickHandlers();
